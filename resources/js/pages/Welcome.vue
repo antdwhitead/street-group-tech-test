@@ -1,8 +1,8 @@
 <script setup lang="ts">
 import { Head } from '@inertiajs/vue3';
 import PageHeader from '@/components/PageHeader.vue';
-import CsvUploadForm from '@/components/CsvUploadForm.vue';
-import CsvFormatGuide from '@/components/CsvFormatGuide.vue';
+import CsvUploadForm from '@/components/csv/CsvUploadForm.vue';
+import CsvFormatGuide from '@/components/csv/CsvFormatGuide.vue';
 </script>
 
 <template>

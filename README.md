@@ -105,3 +105,14 @@ npm run build:ssr
 - `routes/` - Laravel routes
 - `tests/` - PHP tests
 - `database/` - Migrations and seeders
+
+## Project file reference
+
+- `app/Http/Controllers/HomeOwnerController.php` - Main controller that handles inertia response for csv upload
+- `app/Services/HomeOwnerDataService.php` - Service to handle csv parsing logic
+- `app/DataTransferObjects/Person.php` - Person DTO
+- `app/Http/Requests/CsvUploadRequest.php` - Upload FormRequest
+- `resources/js/pages/Welcome.vue` - Main page upload form
+- `resources/js/pages/HomeOwners/Results.vue` - Results page from csv upload
+- `resources/js/components/csv` - Component folder for csv upload
+- `resources/js/components/results` - Component folder for results
