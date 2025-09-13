@@ -19,7 +19,7 @@ class HomeOwnerDataService
     {
         $people = [];
 
-        SimpleExcelReader::create($filePath)
+        SimpleExcelReader::create($filePath, 'csv')
             ->getRows()
             ->each(function (array $row) use (&$people) {
                 foreach ($row as $nameField) {
@@ -163,7 +163,7 @@ class HomeOwnerDataService
     {
         $words = explode(' ', trim($nameString));
 
-        return $words !== [] && $this->isTitle($words[0]);
+        return $this->isTitle($words[0]);
     }
 
     private function isInitial(string $word): bool
