@@ -1,8 +1,8 @@
 <script setup lang="ts">
 import { Head } from '@inertiajs/vue3';
-import ResultsHeader from '@/components/ResultsHeader.vue';
-import ResultsTable from '@/components/ResultsTable.vue';
-import ResultsSummary from '@/components/ResultsSummary.vue';
+import ResultsHeader from '@/components/results/ResultsHeader.vue';
+import ResultsTable from '@/components/results/ResultsTable.vue';
+import ResultsSummary from '@/components/results/ResultsSummary.vue';
 import type { Person } from '@/types/person';
 
 interface Props {
