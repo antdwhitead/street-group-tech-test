@@ -1,6 +1,6 @@
 <?php
 
-use App\DataTransferObjects\Person;
+use App\DataTransferObjects\HomeOwner;
 use App\Services\HomeOwnerDataService;
 
 describe('HomeOwnerDataService', function () {
@@ -13,7 +13,7 @@ describe('HomeOwnerDataService', function () {
             $result = $this->service->parseNameString($input);
 
             expect($result)->toHaveCount(1)
-                ->and($result[0])->toBeInstanceOf(Person::class)
+                ->and($result[0])->toBeInstanceOf(HomeOwner::class)
                 ->and($result[0]->title)->toBe($expectedTitle)
                 ->and($result[0]->first_name)->toBe($expectedFirstName)
                 ->and($result[0]->initial)->toBe($expectedInitial)

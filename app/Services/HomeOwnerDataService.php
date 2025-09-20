@@ -2,20 +2,14 @@
 
 namespace App\Services;
 
-use App\DataTransferObjects\Person;
+use App\DataTransferObjects\HomeOwner;
+use App\Enums\Conjunction;
+use App\Enums\Title;
 use Illuminate\Support\Arr;
 use Spatie\SimpleExcel\SimpleExcelReader;
 
 class HomeOwnerDataService
 {
-    private const TITLES = [
-        'Mr', 'Mrs', 'Miss', 'Ms', 'Dr', 'Prof', 'Sir', 'Lord', 'Lady', 'Mister',
-    ];
-
-    private const CONJUNCTIONS = [
-        '&', 'and', 'And', 'AND',
-    ];
-
     public function parseCsv(string $filePath): array
     {
         $people = [];
@@ -55,7 +49,7 @@ class HomeOwnerDataService
 
     private function containsMultiplePeople(string $nameString): bool
     {
-        foreach (self::CONJUNCTIONS as $conjunction) {
+        foreach (Conjunction::values() as $conjunction) {
             if (str_contains($nameString, " {$conjunction} ")) {
                 return true;
             }
@@ -83,7 +77,7 @@ class HomeOwnerDataService
 
     private function findConjunction(string $nameString): ?string
     {
-        foreach (self::CONJUNCTIONS as $conjunction) {
+        foreach (Conjunction::values() as $conjunction) {
             if (str_contains($nameString, " {$conjunction} ")) {
                 return $conjunction;
             }
@@ -166,7 +160,7 @@ class HomeOwnerDataService
         return count($words) === 1 && $this->isTitle(Arr::first($words));
     }
 
-    private function parseSinglePerson(string $nameString): ?Person
+    private function parseSinglePerson(string $nameString): ?HomeOwner
     {
         $words = $this->cleanWords($nameString);
 
@@ -254,9 +248,9 @@ class HomeOwnerDataService
         Arr::set($components, 'firstName', $firstNameOrInitial);
     }
 
-    private function createPersonFromComponents(array $components): Person
+    private function createPersonFromComponents(array $components): HomeOwner
     {
-        return new Person(
+        return new HomeOwner(
             Arr::get($components, 'title'),
             Arr::get($components, 'firstName'),
             Arr::get($components, 'initial'),
@@ -266,7 +260,7 @@ class HomeOwnerDataService
 
     private function isTitle(string $word): bool
     {
-        return in_array($word, self::TITLES, true);
+        return Title::isValid($word);
     }
 
     private function hasTitle(string $nameString): bool

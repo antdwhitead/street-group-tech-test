@@ -2,7 +2,7 @@
 
 namespace App\DataTransferObjects;
 
-class Person
+class HomeOwner
 {
     public function __construct(
         public string $title,
