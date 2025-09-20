@@ -323,7 +323,7 @@ class HomeOwnerDataService
 
             $homeOwner = HomeOwnerModel::updateOrCreate($attributes, $attributes);
 
-            if ($homeOwner->recentlyCreated) {
+            if ($homeOwner->wasRecentlyCreated) {
                 $this->statistics['newly_created']++;
             } else {
                 $this->statistics['duplicates_found']++;
