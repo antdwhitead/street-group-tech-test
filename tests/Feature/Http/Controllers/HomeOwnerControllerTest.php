@@ -28,7 +28,7 @@ describe('HomeOwnerController', function () {
 
             $response->assertSuccessful();
 
-            expect($response->viewData('page')['props'])->toHaveKey('people')
+            expect($response->viewData('page')['props'])->toHaveKey('homeOwners')
                 ->and($response->viewData('page')['props'])->toHaveKey('statistics')
                 ->and($response->viewData('page')['props'])->toHaveKey('totalCount');
 

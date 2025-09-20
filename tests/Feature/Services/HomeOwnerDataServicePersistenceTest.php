@@ -16,9 +16,9 @@ describe('HomeOwnerDataService Persistence', function () {
         $csvPath = __DIR__.'/../../Data/example.csv';
         $results = $this->service->parseCsv($csvPath, persist: true);
 
-        expect($results)->toHaveKey('people')
+        expect($results)->toHaveKey('homeOwners')
             ->and($results)->toHaveKey('statistics')
-            ->and($results['people'])->toHaveCount(18)
+            ->and($results['homeOwners'])->toHaveCount(18)
             ->and($results['statistics']['total_parsed'])->toBe(18)
             ->and($results['statistics']['newly_created'])->toBe(18)
             ->and($results['statistics']['duplicates_found'])->toBe(0);
@@ -26,12 +26,12 @@ describe('HomeOwnerDataService Persistence', function () {
         // Verify data was persisted to database
         $this->assertDatabaseCount('home_owners', 18);
 
-        $firstPerson = $results['people'][0];
+        $firstHomeOwner = $results['homeOwners'][0];
         $this->assertDatabaseHas('home_owners', [
-            'title' => $firstPerson->title,
-            'first_name' => $firstPerson->first_name,
-            'initial' => $firstPerson->initial,
-            'last_name' => $firstPerson->last_name,
+            'title' => $firstHomeOwner->title,
+            'first_name' => $firstHomeOwner->first_name,
+            'initial' => $firstHomeOwner->initial,
+            'last_name' => $firstHomeOwner->last_name,
         ]);
     });
 

@@ -9,6 +9,7 @@ use App\Enums\Conjunction;
 use App\Enums\Title;
 use App\Models\HomeOwnerModel;
 use Illuminate\Support\Arr;
+use Illuminate\Support\Facades\DB;
 use Spatie\SimpleExcel\SimpleExcelReader;
 
 class HomeOwnerDataService
@@ -34,10 +35,10 @@ class HomeOwnerDataService
 
                         if ($parsedHomeOwners) {
                             $this->homeOwners = Arr::flatten([$this->homeOwners, $parsedHomeOwners]);
-                        }
 
-                        if ($persist) {
-                            $this->persistHomeOwners($parsedHomeOwners);
+                            if ($persist) {
+                                $this->persistHomeOwners($parsedHomeOwners);
+                            }
                         }
                     }
                 }
@@ -46,7 +47,7 @@ class HomeOwnerDataService
         $this->statistics['total_parsed'] = count($this->homeOwners);
 
         return [
-            'people' => $this->homeOwners,
+            'homeOwners' => $this->homeOwners,
             'statistics' => $this->statistics,
         ];
     }
@@ -317,17 +318,19 @@ class HomeOwnerDataService
 
     private function persistHomeOwners(array $homeOwners): void
     {
-        foreach ($homeOwners as $homeOwner) {
+        DB::transaction(function () use ($homeOwners) {
+            foreach ($homeOwners as $homeOwner) {
 
-            $attributes = HomeOwnerModel::fromDto($homeOwner);
+                $attributes = HomeOwnerModel::fromDto($homeOwner);
 
-            $homeOwner = HomeOwnerModel::updateOrCreate($attributes, $attributes);
+                $homeOwner = HomeOwnerModel::updateOrCreate($attributes, $attributes);
 
-            if ($homeOwner->wasRecentlyCreated) {
-                $this->statistics['newly_created']++;
-            } else {
-                $this->statistics['duplicates_found']++;
+                if ($homeOwner->wasRecentlyCreated) {
+                    $this->statistics['newly_created']++;
+                } else {
+                    $this->statistics['duplicates_found']++;
+                }
             }
-        }
+        });
     }
 }

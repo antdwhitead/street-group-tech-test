@@ -33,7 +33,7 @@ describe('HomeOwnerDataService', function () {
             'two-character first name' => ['Mr Jo Smith', 'Mr', 'Jo', null, 'Smith'],
         ]);
 
-        it('parses multiple people with connectors', function (string $input) {
+        it('parses multiple home owners with connectors', function (string $input) {
             $result = $this->service->parseNameString($input);
 
             expect($result)->toHaveCount(2)
@@ -50,7 +50,7 @@ describe('HomeOwnerDataService', function () {
             'and connector' => ['Mr and Mrs Smith'],
         ]);
 
-        it('parses multiple people with different last names', function () {
+        it('parses multiple home owners with different last names', function () {
             $result = $this->service->parseNameString('Mr John Smith & Mrs Jane Doe');
 
             expect($result)->toHaveCount(2)
@@ -94,7 +94,7 @@ describe('HomeOwnerDataService', function () {
             'Mrs to Mr inference' => ['Mrs Jane Smith & John Doe', 'Mrs', 'Mr'],
         ]);
 
-        it('handles multiple people with different surnames', function () {
+        it('handles multiple home owners with different surnames', function () {
             $result = $this->service->parseNameString('Mr Tom Staff and Mr John Doe');
 
             expect($result)->toHaveCount(2)
@@ -125,34 +125,34 @@ describe('HomeOwnerDataService', function () {
             $csvPath = __DIR__.'/../../Data/example.csv';
             $results = $this->service->parseCsv($csvPath, persist: false);
 
-            expect($results)->toHaveKey('people')
+            expect($results)->toHaveKey('homeOwners')
                 ->and($results)->toHaveKey('statistics')
-                ->and($results['people'])->toHaveCount(18)
+                ->and($results['homeOwners'])->toHaveCount(18)
                 ->and($results['statistics']['total_parsed'])->toBe(18)
                 ->and($results['statistics']['newly_created'])->toBe(0)
                 ->and($results['statistics']['duplicates_found'])->toBe(0);
 
-            $people = $results['people'];
-            expect($people[0]->title)->toBe('Mr')
-                ->and($people[0]->first_name)->toBe('John')
-                ->and($people[0]->last_name)->toBe('Smith')
-                ->and($people[1]->title)->toBe('Mrs')
-                ->and($people[1]->first_name)->toBe('Jane')
-                ->and($people[1]->last_name)->toBe('Smith')
-                ->and($people[2]->title)->toBe('Mister')
-                ->and($people[2]->first_name)->toBe('John')
-                ->and($people[2]->last_name)->toBe('Doe')
-                ->and($people[4]->title)->toBe('Mr')
-                ->and($people[4]->last_name)->toBe('Smith')
-                ->and($people[5]->title)->toBe('Mrs')
-                ->and($people[5]->last_name)->toBe('Smith');
+            $homeOwners = $results['homeOwners'];
+            expect($homeOwners[0]->title)->toBe('Mr')
+                ->and($homeOwners[0]->first_name)->toBe('John')
+                ->and($homeOwners[0]->last_name)->toBe('Smith')
+                ->and($homeOwners[1]->title)->toBe('Mrs')
+                ->and($homeOwners[1]->first_name)->toBe('Jane')
+                ->and($homeOwners[1]->last_name)->toBe('Smith')
+                ->and($homeOwners[2]->title)->toBe('Mister')
+                ->and($homeOwners[2]->first_name)->toBe('John')
+                ->and($homeOwners[2]->last_name)->toBe('Doe')
+                ->and($homeOwners[4]->title)->toBe('Mr')
+                ->and($homeOwners[4]->last_name)->toBe('Smith')
+                ->and($homeOwners[5]->title)->toBe('Mrs')
+                ->and($homeOwners[5]->last_name)->toBe('Smith');
 
-            $profResults = collect($people)->where('title', 'Prof');
+            $profResults = collect($homeOwners)->where('title', 'Prof');
             expect($profResults)->toHaveCount(1)
                 ->and($profResults->first()->first_name)->toBe('Alex')
                 ->and($profResults->first()->last_name)->toBe('Brogan');
 
-            $hyphenatedResults = collect($people)->filter(fn ($p) => str_contains($p->last_name ?? '', '-'));
+            $hyphenatedResults = collect($homeOwners)->filter(fn ($h) => str_contains($h->last_name ?? '', '-'));
             expect($hyphenatedResults)->toHaveCount(1)
                 ->and($hyphenatedResults->first()->first_name)->toBe('Faye')
                 ->and($hyphenatedResults->first()->last_name)->toBe('Hughes-Eastwood');

@@ -3,7 +3,7 @@ import { Head } from '@inertiajs/vue3';
 import ResultsHeader from '@/components/results/ResultsHeader.vue';
 import ResultsTable from '@/components/results/ResultsTable.vue';
 import ResultsSummary from '@/components/results/ResultsSummary.vue';
-import type { Person } from '@/types/person';
+import type { HomeOwner } from '@/types/homeOwner';
 
 interface Statistics {
     total_parsed: number;
@@ -12,7 +12,7 @@ interface Statistics {
 }
 
 interface Props {
-    people: Person[];
+    homeOwners: HomeOwner[];
     totalCount: number;
     statistics?: Statistics;
 }
@@ -27,9 +27,9 @@ defineProps<Props>();
         <div class="max-w-6xl mx-auto">
             <ResultsHeader :total-count="totalCount" :statistics="statistics" />
 
-            <ResultsTable :people="people" :total-count="totalCount" />
+            <ResultsTable :home-owners="homeOwners" :total-count="totalCount" />
 
-            <ResultsSummary :people="people" :total-count="totalCount" :statistics="statistics" />
+            <ResultsSummary :home-owners="homeOwners" :total-count="totalCount" :statistics="statistics" />
         </div>
     </div>
 </template>

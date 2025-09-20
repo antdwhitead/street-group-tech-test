@@ -22,11 +22,11 @@ class HomeOwnerController extends Controller
         $tempPath = $file->getRealPath();
 
         $result = $this->homeOwnerDataService->parseCsv($tempPath);
-        $peopleArray = array_map(fn ($person) => $person->toArray(), Arr::get($result, 'people', []));
+        $homeOwnersArray = array_map(fn ($homeOwner) => $homeOwner->toArray(), Arr::get($result, 'homeOwners', []));
 
         return Inertia::render('HomeOwners/Results', [
-            'people' => $peopleArray,
-            'totalCount' => count($peopleArray),
+            'homeOwners' => $homeOwnersArray,
+            'totalCount' => count($homeOwnersArray),
             'statistics' => Arr::get($result, 'statistics', []),
         ]);
     }

@@ -47,14 +47,14 @@ describe('CSV Upload', function () {
 
         $response->assertStatus(200)
             ->assertInertia(fn ($page) => $page->component('HomeOwners/Results')
-                ->has('people', 18)
+                ->has('homeOwners', 18)
                 ->where('totalCount', 18)
-                ->where('people.0.title', 'Mr')
-                ->where('people.0.first_name', 'John')
-                ->where('people.0.last_name', 'Smith')
-                ->where('people.1.title', 'Mrs')
-                ->where('people.1.first_name', 'Jane')
-                ->where('people.1.last_name', 'Smith')
+                ->where('homeOwners.0.title', 'Mr')
+                ->where('homeOwners.0.first_name', 'John')
+                ->where('homeOwners.0.last_name', 'Smith')
+                ->where('homeOwners.1.title', 'Mrs')
+                ->where('homeOwners.1.first_name', 'Jane')
+                ->where('homeOwners.1.last_name', 'Smith')
             );
     });
 });
