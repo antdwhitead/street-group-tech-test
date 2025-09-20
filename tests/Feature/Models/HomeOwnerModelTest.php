@@ -15,16 +15,16 @@ describe('HomeOwnerModel', function () {
             ->and($homeOwner->last_name)->toBeString();
     });
 
-    it('can be created with factory states', function () {
-        $homeOwnerWithFirstName = HomeOwnerModel::factory()->withFirstName()->create();
-        $homeOwnerWithInitial = HomeOwnerModel::factory()->withInitial()->create();
-        $homeOwnerWithFullName = HomeOwnerModel::factory()->withFullName()->create();
+    it('can be created with factory states', function (string $method, string $field) {
+        $homeOwner = HomeOwnerModel::factory()->{$method}()->create();
 
-        expect($homeOwnerWithFirstName->first_name)->not->toBeNull()
-            ->and($homeOwnerWithInitial->initial)->not->toBeNull()
-            ->and($homeOwnerWithFullName->first_name)->not->toBeNull()
-            ->and($homeOwnerWithFullName->initial)->not->toBeNull();
-    });
+        expect($homeOwner->{$field})->not->toBeNull();
+    })->with([
+        'withFirstName' => ['withFirstName', 'first_name'],
+        'withInitial' => ['withInitial', 'initial'],
+        'withFullName has first_name' => ['withFullName', 'first_name'],
+        'withFullName has initial' => ['withFullName', 'initial'],
+    ]);
 
     it('scopes by full name correctly', function () {
         HomeOwnerModel::factory()
@@ -47,23 +47,24 @@ describe('HomeOwnerModel', function () {
             ->and($result->last_name)->toBe('Smith');
     });
 
-    it('generates full name attribute correctly', function () {
-        $homeOwner = HomeOwnerModel::factory()
-            ->withTitle(Title::DR)
-            ->withFirstName('Jane')
-            ->withLastName('Doe')
-            ->make();
+    it('generates full name attribute correctly', function (Title $title, ?string $firstName, ?string $initial, string $lastName, string $expected) {
+        $factory = HomeOwnerModel::factory()->withTitle($title)->withLastName($lastName);
 
-        expect($homeOwner->full_name)->toBe('Dr Jane Doe');
-    });
+        if ($firstName) {
+            $factory = $factory->withFirstName($firstName);
+        }
 
-    it('generates full name with initial correctly', function () {
-        $homeOwner = HomeOwnerModel::factory()
-            ->withTitle(Title::MR)
-            ->withInitial('J')
-            ->withLastName('Smith')
-            ->make();
+        if ($initial) {
+            $factory = $factory->withInitial($initial);
+        }
 
-        expect($homeOwner->full_name)->toBe('Mr J. Smith');
-    });
+        $homeOwner = $factory->make();
+
+        expect($homeOwner->full_name)->toBe($expected);
+    })->with([
+        'with first name' => [Title::DR, 'Jane', null, 'Doe', 'Dr Jane Doe'],
+        'with initial' => [Title::MR, null, 'J', 'Smith', 'Mr J. Smith'],
+        'title and last name only' => [Title::MRS, null, null, 'Johnson', 'Mrs Johnson'],
+        'with both first name and initial' => [Title::PROF, 'Mary', 'A', 'Wilson', 'Prof Mary A. Wilson'],
+    ]);
 });
