@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 use Illuminate\Http\UploadedFile;
 
 describe('CSV Upload', function () {

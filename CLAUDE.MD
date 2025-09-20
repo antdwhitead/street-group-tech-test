@@ -45,6 +45,7 @@ This is a Laravel + Vue application using Inertia.js for seamless SPA-like exper
 - **Authentication**: Laravel Breeze-style auth with Inertia
 - **Database**: SQLite (development), configured in `config/database.php`
 - **Testing**: Pest PHP testing framework
+  - Where possible make use of pest datasets to keep tests dry
 
 ### Key Files
 - `resources/js/app.tsx` - Vue application entry point

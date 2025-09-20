@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 use App\Enums\Title;
 use App\Models\HomeOwnerModel;
 use Illuminate\Foundation\Testing\RefreshDatabase;
