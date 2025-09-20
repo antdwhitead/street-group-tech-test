@@ -3,6 +3,7 @@
 namespace App\Services;
 
 use App\DataTransferObjects\Person;
+use Illuminate\Support\Arr;
 use Spatie\SimpleExcel\SimpleExcelReader;
 
 class HomeOwnerDataService
@@ -25,7 +26,9 @@ class HomeOwnerDataService
                 foreach ($row as $nameField) {
                     if (! empty($nameField)) {
                         $parsedPeople = $this->parseNameString(trim($nameField));
-                        $people = array_merge($people, $parsedPeople);
+                        if ($parsedPeople) {
+                            $people = Arr::flatten([$people, $parsedPeople]);
+                        }
                     }
                 }
             });
@@ -33,19 +36,21 @@ class HomeOwnerDataService
         return $people;
     }
 
-    public function parseNameString(string $nameString): array
+    public function parseNameString(string $nameString): ?array
     {
         $nameString = trim($nameString);
 
         if (empty($nameString)) {
-            return [];
+            return null;
         }
 
         if ($this->containsMultiplePeople($nameString)) {
             return $this->parseMultiplePeople($nameString);
         }
 
-        return [$this->parseSinglePerson($nameString)];
+        $person = $this->parseSinglePerson($nameString);
+
+        return $person ? [$person] : null;
     }
 
     private function containsMultiplePeople(string $nameString): bool
@@ -59,41 +64,78 @@ class HomeOwnerDataService
         return false;
     }
 
-    private function parseMultiplePeople(string $nameString): array
+    private function parseMultiplePeople(string $nameString): ?array
     {
-        $people = [];
+        $conjunction = $this->findConjunction($nameString);
 
+        if (! $conjunction) {
+            return null;
+        }
+
+        $parts = $this->splitByConjunction($nameString, $conjunction);
+
+        if (! $this->isValidConjunctionSplit($parts)) {
+            return null;
+        }
+
+        return $this->createPeopleFromParts(Arr::get($parts, 0), Arr::get($parts, 1));
+    }
+
+    private function findConjunction(string $nameString): ?string
+    {
         foreach (self::CONJUNCTIONS as $conjunction) {
             if (str_contains($nameString, " {$conjunction} ")) {
-                $parts = explode(" {$conjunction} ", $nameString, 2);
-
-                if (count($parts) === 2) {
-                    $firstPart = trim($parts[0]);
-                    $secondPart = trim($parts[1]);
-
-                    $sharedLastName = $this->extractSharedLastName($firstPart, $secondPart);
-
-                    if ($sharedLastName && ! str_contains($firstPart, $sharedLastName)) {
-                        $firstPart .= ' '.$sharedLastName;
-                    }
-
-                    $firstPerson = $this->parseSinglePerson($firstPart);
-                    $people[] = $firstPerson;
-
-                    if (! $this->hasTitle($secondPart)) {
-                        $inferredTitle = $this->inferTitle($firstPerson->title);
-                        $secondPart = $inferredTitle.' '.$secondPart;
-                    }
-
-                    $secondPerson = $this->parseSinglePerson($secondPart);
-                    $people[] = $secondPerson;
-
-                    return $people;
-                }
+                return $conjunction;
             }
         }
 
-        return [];
+        return null;
+    }
+
+    private function splitByConjunction(string $nameString, string $conjunction): array
+    {
+        return explode(" {$conjunction} ", $nameString, 2);
+    }
+
+    private function isValidConjunctionSplit(array $parts): bool
+    {
+        return count($parts) === 2;
+    }
+
+    private function createPeopleFromParts(string $firstPart, string $secondPart): array
+    {
+        $firstPart = trim($firstPart);
+        $secondPart = trim($secondPart);
+
+        $firstPart = $this->addSharedLastNameIfNeeded($firstPart, $secondPart);
+        $firstPerson = $this->parseSinglePerson($firstPart);
+
+        $secondPart = $this->addInferredTitleIfNeeded($secondPart, $firstPerson->title);
+        $secondPerson = $this->parseSinglePerson($secondPart);
+
+        return [$firstPerson, $secondPerson];
+    }
+
+    private function addSharedLastNameIfNeeded(string $firstPart, string $secondPart): string
+    {
+        $sharedLastName = $this->extractSharedLastName($firstPart, $secondPart);
+
+        if ($sharedLastName && ! str_contains($firstPart, $sharedLastName)) {
+            return $firstPart.' '.$sharedLastName;
+        }
+
+        return $firstPart;
+    }
+
+    private function addInferredTitleIfNeeded(string $secondPart, string $firstPersonTitle): string
+    {
+        if ($this->hasTitle($secondPart)) {
+            return $secondPart;
+        }
+
+        $inferredTitle = $this->inferTitle($firstPersonTitle);
+
+        return $inferredTitle.' '.$secondPart;
     }
 
     private function extractSharedLastName(string $firstPart, string $secondPart): ?string
@@ -101,57 +143,125 @@ class HomeOwnerDataService
         $firstWords = explode(' ', $firstPart);
         $secondWords = explode(' ', $secondPart);
 
-        if (count($secondWords) > 1 && $this->isTitle($secondWords[0])) {
-            $potentialLastName = end($secondWords);
-
-            if (count($firstWords) === 1 && $this->isTitle($firstWords[0])) {
-                return $potentialLastName;
-            }
+        if (! $this->canExtractSharedLastName($firstWords, $secondWords)) {
+            return null;
         }
 
-        return null;
+        return Arr::last($secondWords);
     }
 
-    private function parseSinglePerson(string $nameString): Person
+    private function canExtractSharedLastName(array $firstWords, array $secondWords): bool
     {
-        $words = explode(' ', trim($nameString));
-        $words = array_filter($words, fn ($word) => ! empty($word));
-        $words = array_values($words);
+        return $this->hasMultipleWordsWithTitle($secondWords) &&
+               $this->isSingleTitleWord($firstWords);
+    }
+
+    private function hasMultipleWordsWithTitle(array $words): bool
+    {
+        return count($words) > 1 && $this->isTitle(Arr::first($words));
+    }
+
+    private function isSingleTitleWord(array $words): bool
+    {
+        return count($words) === 1 && $this->isTitle(Arr::first($words));
+    }
+
+    private function parseSinglePerson(string $nameString): ?Person
+    {
+        $words = $this->cleanWords($nameString);
 
         if (empty($words)) {
-            return new Person('', null, null, '');
+            return null;
         }
 
-        $title = '';
-        $firstName = null;
-        $initial = null;
-        $lastName = '';
-        $wordIndex = 0;
+        $nameComponents = $this->extractNameComponents($words);
 
-        if ($this->isTitle($words[0])) {
-            $title = $words[0];
-            $wordIndex = 1;
+        return $this->createPersonFromComponents($nameComponents);
+    }
+
+    private function cleanWords(string $nameString): array
+    {
+        $words = explode(' ', trim($nameString));
+        $words = Arr::where($words, fn ($word) => ! empty($word));
+
+        return array_values($words);
+    }
+
+    private function extractNameComponents(array $words): array
+    {
+        $components = [
+            'title' => '',
+            'firstName' => null,
+            'initial' => null,
+            'lastName' => '',
+        ];
+
+        $wordIndex = $this->extractTitle($words, $components);
+        $this->extractNamesFromRemainingWords($words, $wordIndex, $components);
+
+        return $components;
+    }
+
+    private function extractTitle(array $words, array &$components): int
+    {
+        if ($this->isTitle(Arr::first($words))) {
+            Arr::set($components, 'title', Arr::first($words));
+
+            return 1;
         }
 
-        if ($wordIndex < count($words)) {
-            $remainingWords = array_slice($words, $wordIndex);
+        return 0;
+    }
 
-            if (count($remainingWords) === 1) {
-                $lastName = $remainingWords[0];
-            } elseif (count($remainingWords) >= 2) {
-                $firstNameOrInitial = $remainingWords[0];
-
-                if ($this->isInitial($firstNameOrInitial)) {
-                    $initial = rtrim($firstNameOrInitial, '.');
-                } else {
-                    $firstName = $firstNameOrInitial;
-                }
-
-                $lastName = $remainingWords[count($remainingWords) - 1];
-            }
+    private function extractNamesFromRemainingWords(array $words, int $startIndex, array &$components): void
+    {
+        if ($startIndex >= count($words)) {
+            return;
         }
 
-        return new Person($title, $firstName, $initial, $lastName);
+        $remainingWords = array_slice($words, $startIndex);
+
+        if ($this->hasSingleRemainingWord($remainingWords)) {
+            Arr::set($components, 'lastName', Arr::first($remainingWords));
+
+            return;
+        }
+
+        if ($this->hasMultipleRemainingWords($remainingWords)) {
+            $this->extractFirstNameOrInitial(Arr::first($remainingWords), $components);
+            Arr::set($components, 'lastName', Arr::last($remainingWords));
+        }
+    }
+
+    private function hasSingleRemainingWord(array $remainingWords): bool
+    {
+        return count($remainingWords) === 1;
+    }
+
+    private function hasMultipleRemainingWords(array $remainingWords): bool
+    {
+        return count($remainingWords) >= 2;
+    }
+
+    private function extractFirstNameOrInitial(string $firstNameOrInitial, array &$components): void
+    {
+        if ($this->isInitial($firstNameOrInitial)) {
+            Arr::set($components, 'initial', rtrim($firstNameOrInitial, '.'));
+
+            return;
+        }
+
+        Arr::set($components, 'firstName', $firstNameOrInitial);
+    }
+
+    private function createPersonFromComponents(array $components): Person
+    {
+        return new Person(
+            Arr::get($components, 'title'),
+            Arr::get($components, 'firstName'),
+            Arr::get($components, 'initial'),
+            Arr::get($components, 'lastName')
+        );
     }
 
     private function isTitle(string $word): bool
@@ -163,14 +273,12 @@ class HomeOwnerDataService
     {
         $words = explode(' ', trim($nameString));
 
-        return $this->isTitle($words[0]);
+        return $this->isTitle(Arr::first($words));
     }
 
     private function isInitial(string $word): bool
     {
-        return strlen($word) <= 2 &&
-               preg_match('/^[A-Z]\.?$/', $word) &&
-               ctype_alpha(str_replace('.', '', $word));
+        return strlen($word) <= 2 && preg_match('/^[A-Z]\.?$/', $word);
     }
 
     private function inferTitle(string $firstPersonTitle): string

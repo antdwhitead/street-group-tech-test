@@ -95,13 +95,13 @@ describe('HomeOwnerDataService', function () {
         it('handles empty string', function () {
             $result = $this->service->parseNameString('');
 
-            expect($result)->toBeEmpty();
+            expect($result)->toBeNull();
         });
 
         it('handles whitespace only string', function () {
             $result = $this->service->parseNameString('   ');
 
-            expect($result)->toBeEmpty();
+            expect($result)->toBeNull();
         });
 
         it('parses person without title', function () {
@@ -185,6 +185,36 @@ describe('HomeOwnerDataService', function () {
                 ->and($result[1]->initial)->toBeNull()
                 ->and($result[1]->last_name)->toBe('Doe');
         });
+
+        it('handles invalid conjunction input', function () {
+            $result = $this->service->parseNameString('Mr &');
+
+            expect($result)->toHaveCount(1)
+                ->and($result[0]->title)->toBe('Mr')
+                ->and($result[0]->first_name)->toBeNull()
+                ->and($result[0]->initial)->toBeNull()
+                ->and($result[0]->last_name)->toBe('&');
+        });
+
+        it('handles single character initials correctly', function () {
+            $result = $this->service->parseNameString('Dr A Smith');
+
+            expect($result)->toHaveCount(1)
+                ->and($result[0]->title)->toBe('Dr')
+                ->and($result[0]->first_name)->toBeNull()
+                ->and($result[0]->initial)->toBe('A')
+                ->and($result[0]->last_name)->toBe('Smith');
+        });
+
+        it('handles two-character words that are not initials', function () {
+            $result = $this->service->parseNameString('Mr Jo Smith');
+
+            expect($result)->toHaveCount(1)
+                ->and($result[0]->title)->toBe('Mr')
+                ->and($result[0]->first_name)->toBe('Jo')
+                ->and($result[0]->initial)->toBeNull()
+                ->and($result[0]->last_name)->toBe('Smith');
+        });
     });
 
     describe('parseCsv', function () {
@@ -207,13 +237,15 @@ describe('HomeOwnerDataService', function () {
                 ->and($results[5]->title)->toBe('Mrs')
                 ->and($results[5]->last_name)->toBe('Smith');
 
-            $profResult = collect($results)->first(fn ($p) => $p->title === 'Prof');
-            expect($profResult->first_name)->toBe('Alex')
-                ->and($profResult->last_name)->toBe('Brogan');
+            $profResults = collect($results)->where('title', 'Prof');
+            expect($profResults)->toHaveCount(1);
+            expect($profResults->first()->first_name)->toBe('Alex');
+            expect($profResults->first()->last_name)->toBe('Brogan');
 
-            $hyphenatedResult = collect($results)->first(fn ($p) => str_contains($p->last_name ?? '', '-'));
-            expect($hyphenatedResult->first_name)->toBe('Faye')
-                ->and($hyphenatedResult->last_name)->toBe('Hughes-Eastwood');
+            $hyphenatedResults = collect($results)->filter(fn ($p) => str_contains($p->last_name ?? '', '-'));
+            expect($hyphenatedResults)->toHaveCount(1);
+            expect($hyphenatedResults->first()->first_name)->toBe('Faye');
+            expect($hyphenatedResults->first()->last_name)->toBe('Hughes-Eastwood');
         });
     });
 });
