@@ -121,34 +121,42 @@ describe('HomeOwnerDataService', function () {
     });
 
     describe('parseCsv', function () {
-        it('parses CSV file correctly', function () {
+        it('parses CSV file correctly without persistence', function () {
             $csvPath = __DIR__.'/../../Data/example.csv';
-            $results = $this->service->parseCsv($csvPath);
+            $results = $this->service->parseCsv($csvPath, persist: false);
 
-            expect($results)->toHaveCount(18)
-                ->and($results[0]->title)->toBe('Mr')
-                ->and($results[0]->first_name)->toBe('John')
-                ->and($results[0]->last_name)->toBe('Smith')
-                ->and($results[1]->title)->toBe('Mrs')
-                ->and($results[1]->first_name)->toBe('Jane')
-                ->and($results[1]->last_name)->toBe('Smith')
-                ->and($results[2]->title)->toBe('Mister')
-                ->and($results[2]->first_name)->toBe('John')
-                ->and($results[2]->last_name)->toBe('Doe')
-                ->and($results[4]->title)->toBe('Mr')
-                ->and($results[4]->last_name)->toBe('Smith')
-                ->and($results[5]->title)->toBe('Mrs')
-                ->and($results[5]->last_name)->toBe('Smith');
+            expect($results)->toHaveKey('people')
+                ->and($results)->toHaveKey('statistics')
+                ->and($results['people'])->toHaveCount(18)
+                ->and($results['statistics']['total_parsed'])->toBe(18)
+                ->and($results['statistics']['newly_created'])->toBe(0)
+                ->and($results['statistics']['duplicates_found'])->toBe(0);
 
-            $profResults = collect($results)->where('title', 'Prof');
+            $people = $results['people'];
+            expect($people[0]->title)->toBe('Mr')
+                ->and($people[0]->first_name)->toBe('John')
+                ->and($people[0]->last_name)->toBe('Smith')
+                ->and($people[1]->title)->toBe('Mrs')
+                ->and($people[1]->first_name)->toBe('Jane')
+                ->and($people[1]->last_name)->toBe('Smith')
+                ->and($people[2]->title)->toBe('Mister')
+                ->and($people[2]->first_name)->toBe('John')
+                ->and($people[2]->last_name)->toBe('Doe')
+                ->and($people[4]->title)->toBe('Mr')
+                ->and($people[4]->last_name)->toBe('Smith')
+                ->and($people[5]->title)->toBe('Mrs')
+                ->and($people[5]->last_name)->toBe('Smith');
+
+            $profResults = collect($people)->where('title', 'Prof');
             expect($profResults)->toHaveCount(1)
                 ->and($profResults->first()->first_name)->toBe('Alex')
                 ->and($profResults->first()->last_name)->toBe('Brogan');
 
-            $hyphenatedResults = collect($results)->filter(fn ($p) => str_contains($p->last_name ?? '', '-'));
+            $hyphenatedResults = collect($people)->filter(fn ($p) => str_contains($p->last_name ?? '', '-'));
             expect($hyphenatedResults)->toHaveCount(1)
                 ->and($hyphenatedResults->first()->first_name)->toBe('Faye')
                 ->and($hyphenatedResults->first()->last_name)->toBe('Hughes-Eastwood');
         });
+
     });
 });

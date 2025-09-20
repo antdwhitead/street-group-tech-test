@@ -75,6 +75,7 @@ This is a Laravel + Vue application using Inertia.js for seamless SPA-like exper
   - Run all tests and they pass
   - Run phpstan and fixed any errors
   - Run pint
+- When interacting with arrays always use Laravel's Arr facade
 
 ## Front end
 - All code should adhere to typescript definitions

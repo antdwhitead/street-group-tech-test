@@ -2,7 +2,10 @@
 
 declare(strict_types=1);
 
+use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Http\UploadedFile;
+
+uses(RefreshDatabase::class);
 
 describe('CSV Upload', function () {
     it('validates required csv file', function () {
