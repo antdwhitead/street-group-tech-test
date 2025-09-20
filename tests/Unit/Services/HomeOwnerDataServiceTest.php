@@ -9,49 +9,30 @@ describe('HomeOwnerDataService', function () {
     });
 
     describe('parseNameString', function () {
-        it('parses single person with title, first name and last name', function () {
-            $result = $this->service->parseNameString('Mr John Smith');
+        it('parses single person names', function (string $input, string $expectedTitle, ?string $expectedFirstName, ?string $expectedInitial, string $expectedLastName) {
+            $result = $this->service->parseNameString($input);
 
             expect($result)->toHaveCount(1)
                 ->and($result[0])->toBeInstanceOf(Person::class)
-                ->and($result[0]->title)->toBe('Mr')
-                ->and($result[0]->first_name)->toBe('John')
-                ->and($result[0]->initial)->toBeNull()
-                ->and($result[0]->last_name)->toBe('Smith');
-        });
+                ->and($result[0]->title)->toBe($expectedTitle)
+                ->and($result[0]->first_name)->toBe($expectedFirstName)
+                ->and($result[0]->initial)->toBe($expectedInitial)
+                ->and($result[0]->last_name)->toBe($expectedLastName);
+        })->with([
+            'title, first name and last name' => ['Mr John Smith', 'Mr', 'John', null, 'Smith'],
+            'title and initial with period' => ['Mr J. Smith', 'Mr', null, 'J', 'Smith'],
+            'title and initial without period' => ['Mr J Smith', 'Mr', null, 'J', 'Smith'],
+            'title and last name only' => ['Mr Smith', 'Mr', null, null, 'Smith'],
+            'no title' => ['John Smith', '', 'John', null, 'Smith'],
+            'multiple middle names' => ['Mr John Michael Smith', 'Mr', 'John', null, 'Smith'],
+            'Mister title' => ['Mister John Doe', 'Mister', 'John', null, 'Doe'],
+            'hyphenated surnames' => ['Mrs Faye Hughes-Eastwood', 'Mrs', 'Faye', null, 'Hughes-Eastwood'],
+            'single character initial' => ['Dr A Smith', 'Dr', null, 'A', 'Smith'],
+            'two-character first name' => ['Mr Jo Smith', 'Mr', 'Jo', null, 'Smith'],
+        ]);
 
-        it('parses single person with title and initial', function () {
-            $result = $this->service->parseNameString('Mr J. Smith');
-
-            expect($result)->toHaveCount(1)
-                ->and($result[0]->title)->toBe('Mr')
-                ->and($result[0]->first_name)->toBeNull()
-                ->and($result[0]->initial)->toBe('J')
-                ->and($result[0]->last_name)->toBe('Smith');
-        });
-
-        it('parses single person with initial without period', function () {
-            $result = $this->service->parseNameString('Mr J Smith');
-
-            expect($result)->toHaveCount(1)
-                ->and($result[0]->title)->toBe('Mr')
-                ->and($result[0]->first_name)->toBeNull()
-                ->and($result[0]->initial)->toBe('J')
-                ->and($result[0]->last_name)->toBe('Smith');
-        });
-
-        it('parses single person with title and last name only', function () {
-            $result = $this->service->parseNameString('Mr Smith');
-
-            expect($result)->toHaveCount(1)
-                ->and($result[0]->title)->toBe('Mr')
-                ->and($result[0]->first_name)->toBeNull()
-                ->and($result[0]->initial)->toBeNull()
-                ->and($result[0]->last_name)->toBe('Smith');
-        });
-
-        it('parses multiple people connected with &', function () {
-            $result = $this->service->parseNameString('Mr & Mrs Smith');
+        it('parses multiple people with connectors', function (string $input) {
+            $result = $this->service->parseNameString($input);
 
             expect($result)->toHaveCount(2)
                 ->and($result[0]->title)->toBe('Mr')
@@ -62,21 +43,10 @@ describe('HomeOwnerDataService', function () {
                 ->and($result[1]->first_name)->toBeNull()
                 ->and($result[1]->initial)->toBeNull()
                 ->and($result[1]->last_name)->toBe('Smith');
-        });
-
-        it('parses multiple people connected with and', function () {
-            $result = $this->service->parseNameString('Mr and Mrs Smith');
-
-            expect($result)->toHaveCount(2)
-                ->and($result[0]->title)->toBe('Mr')
-                ->and($result[0]->first_name)->toBeNull()
-                ->and($result[0]->initial)->toBeNull()
-                ->and($result[0]->last_name)->toBe('Smith')
-                ->and($result[1]->title)->toBe('Mrs')
-                ->and($result[1]->first_name)->toBeNull()
-                ->and($result[1]->initial)->toBeNull()
-                ->and($result[1]->last_name)->toBe('Smith');
-        });
+        })->with([
+            'ampersand connector' => ['Mr & Mrs Smith'],
+            'and connector' => ['Mr and Mrs Smith'],
+        ]);
 
         it('parses multiple people with different last names', function () {
             $result = $this->service->parseNameString('Mr John Smith & Mrs Jane Doe');
@@ -92,85 +62,35 @@ describe('HomeOwnerDataService', function () {
                 ->and($result[1]->last_name)->toBe('Doe');
         });
 
-        it('handles empty string', function () {
-            $result = $this->service->parseNameString('');
+        it('handles empty or invalid inputs', function (string $input) {
+            $result = $this->service->parseNameString($input);
 
             expect($result)->toBeNull();
-        });
+        })->with([
+            'empty string' => [''],
+            'whitespace only' => ['   '],
+        ]);
 
-        it('handles whitespace only string', function () {
-            $result = $this->service->parseNameString('   ');
-
-            expect($result)->toBeNull();
-        });
-
-        it('parses person without title', function () {
-            $result = $this->service->parseNameString('John Smith');
+        it('handles various titles', function (string $title) {
+            $result = $this->service->parseNameString("{$title} Smith");
 
             expect($result)->toHaveCount(1)
-                ->and($result[0]->title)->toBe('')
-                ->and($result[0]->first_name)->toBe('John')
-                ->and($result[0]->initial)->toBeNull()
+                ->and($result[0]->title)->toBe($title)
                 ->and($result[0]->last_name)->toBe('Smith');
-        });
+        })->with([
+            'Dr', 'Prof', 'Sir', 'Lady', 'Miss', 'Ms',
+        ]);
 
-        it('handles various titles', function () {
-            $titles = ['Dr', 'Prof', 'Sir', 'Lady', 'Miss', 'Ms'];
-
-            foreach ($titles as $title) {
-                $result = $this->service->parseNameString("{$title} Smith");
-
-                expect($result)->toHaveCount(1)
-                    ->and($result[0]->title)->toBe($title)
-                    ->and($result[0]->last_name)->toBe('Smith');
-            }
-        });
-
-        it('infers Mrs title when first person is Mr', function () {
-            $result = $this->service->parseNameString('Mr John Smith & Jane Doe');
+        it('infers spouse title', function (string $input, string $firstTitle, string $secondTitle) {
+            $result = $this->service->parseNameString($input);
 
             expect($result)->toHaveCount(2)
-                ->and($result[0]->title)->toBe('Mr')
-                ->and($result[1]->title)->toBe('Mrs');
-        });
-
-        it('infers Mr title when first person is Mrs', function () {
-            $result = $this->service->parseNameString('Mrs Jane Smith & John Doe');
-
-            expect($result)->toHaveCount(2)
-                ->and($result[0]->title)->toBe('Mrs')
-                ->and($result[1]->title)->toBe('Mr');
-        });
-
-        it('handles multiple middle names by taking last as surname', function () {
-            $result = $this->service->parseNameString('Mr John Michael Smith');
-
-            expect($result)->toHaveCount(1)
-                ->and($result[0]->title)->toBe('Mr')
-                ->and($result[0]->first_name)->toBe('John')
-                ->and($result[0]->initial)->toBeNull()
-                ->and($result[0]->last_name)->toBe('Smith');
-        });
-
-        it('handles Mister title', function () {
-            $result = $this->service->parseNameString('Mister John Doe');
-
-            expect($result)->toHaveCount(1)
-                ->and($result[0]->title)->toBe('Mister')
-                ->and($result[0]->first_name)->toBe('John')
-                ->and($result[0]->initial)->toBeNull()
-                ->and($result[0]->last_name)->toBe('Doe');
-        });
-
-        it('handles hyphenated surnames', function () {
-            $result = $this->service->parseNameString('Mrs Faye Hughes-Eastwood');
-
-            expect($result)->toHaveCount(1)
-                ->and($result[0]->title)->toBe('Mrs')
-                ->and($result[0]->first_name)->toBe('Faye')
-                ->and($result[0]->initial)->toBeNull()
-                ->and($result[0]->last_name)->toBe('Hughes-Eastwood');
-        });
+                ->and($result[0]->title)->toBe($firstTitle)
+                ->and($result[1]->title)->toBe($secondTitle);
+        })->with([
+            'Mr to Mrs inference' => ['Mr John Smith & Jane Doe', 'Mr', 'Mrs'],
+            'Mrs to Mr inference' => ['Mrs Jane Smith & John Doe', 'Mrs', 'Mr'],
+        ]);
 
         it('handles multiple people with different surnames', function () {
             $result = $this->service->parseNameString('Mr Tom Staff and Mr John Doe');
@@ -196,25 +116,6 @@ describe('HomeOwnerDataService', function () {
                 ->and($result[0]->last_name)->toBe('&');
         });
 
-        it('handles single character initials correctly', function () {
-            $result = $this->service->parseNameString('Dr A Smith');
-
-            expect($result)->toHaveCount(1)
-                ->and($result[0]->title)->toBe('Dr')
-                ->and($result[0]->first_name)->toBeNull()
-                ->and($result[0]->initial)->toBe('A')
-                ->and($result[0]->last_name)->toBe('Smith');
-        });
-
-        it('handles two-character words that are not initials', function () {
-            $result = $this->service->parseNameString('Mr Jo Smith');
-
-            expect($result)->toHaveCount(1)
-                ->and($result[0]->title)->toBe('Mr')
-                ->and($result[0]->first_name)->toBe('Jo')
-                ->and($result[0]->initial)->toBeNull()
-                ->and($result[0]->last_name)->toBe('Smith');
-        });
     });
 
     describe('parseCsv', function () {
@@ -238,14 +139,14 @@ describe('HomeOwnerDataService', function () {
                 ->and($results[5]->last_name)->toBe('Smith');
 
             $profResults = collect($results)->where('title', 'Prof');
-            expect($profResults)->toHaveCount(1);
-            expect($profResults->first()->first_name)->toBe('Alex');
-            expect($profResults->first()->last_name)->toBe('Brogan');
+            expect($profResults)->toHaveCount(1)
+                ->and($profResults->first()->first_name)->toBe('Alex')
+                ->and($profResults->first()->last_name)->toBe('Brogan');
 
             $hyphenatedResults = collect($results)->filter(fn ($p) => str_contains($p->last_name ?? '', '-'));
-            expect($hyphenatedResults)->toHaveCount(1);
-            expect($hyphenatedResults->first()->first_name)->toBe('Faye');
-            expect($hyphenatedResults->first()->last_name)->toBe('Hughes-Eastwood');
+            expect($hyphenatedResults)->toHaveCount(1)
+                ->and($hyphenatedResults->first()->first_name)->toBe('Faye')
+                ->and($hyphenatedResults->first()->last_name)->toBe('Hughes-Eastwood');
         });
     });
 });
