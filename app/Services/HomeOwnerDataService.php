@@ -7,29 +7,49 @@ namespace App\Services;
 use App\DataTransferObjects\HomeOwner;
 use App\Enums\Conjunction;
 use App\Enums\Title;
+use App\Models\HomeOwnerModel;
 use Illuminate\Support\Arr;
+use Illuminate\Support\Facades\DB;
 use Spatie\SimpleExcel\SimpleExcelReader;
 
 class HomeOwnerDataService
 {
-    public function parseCsv(string $filePath): array
+    private array $homeOwners = [];
+
+    private array $statistics = [
+        'total_parsed' => 0,
+        'newly_created' => 0,
+        'duplicates_found' => 0,
+    ];
+
+    public function parseCsv(string $filePath, bool $persist = true): array
     {
-        $people = [];
+        $this->resetState();
 
         SimpleExcelReader::create($filePath, 'csv')
             ->getRows()
-            ->each(function (array $row) use (&$people) {
+            ->each(function (array $row) use ($persist) {
                 foreach ($row as $nameField) {
                     if (! empty($nameField)) {
-                        $parsedPeople = $this->parseNameString(trim($nameField));
-                        if ($parsedPeople) {
-                            $people = Arr::flatten([$people, $parsedPeople]);
+                        $parsedHomeOwners = $this->parseNameString(trim($nameField));
+
+                        if ($parsedHomeOwners) {
+                            $this->homeOwners = Arr::flatten([$this->homeOwners, $parsedHomeOwners]);
+
+                            if ($persist) {
+                                $this->persistHomeOwners($parsedHomeOwners);
+                            }
                         }
                     }
                 }
             });
 
-        return $people;
+        $this->statistics['total_parsed'] = count($this->homeOwners);
+
+        return [
+            'homeOwners' => $this->homeOwners,
+            'statistics' => $this->statistics,
+        ];
     }
 
     public function parseNameString(string $nameString): ?array
@@ -40,16 +60,16 @@ class HomeOwnerDataService
             return null;
         }
 
-        if ($this->containsMultiplePeople($nameString)) {
-            return $this->parseMultiplePeople($nameString);
+        if ($this->containsMultipleHomeOwners($nameString)) {
+            return $this->parseMultipleHomeOwners($nameString);
         }
 
-        $person = $this->parseSinglePerson($nameString);
+        $homeOwner = $this->parseSingleHomeOwner($nameString);
 
-        return $person ? [$person] : null;
+        return $homeOwner ? [$homeOwner] : null;
     }
 
-    private function containsMultiplePeople(string $nameString): bool
+    private function containsMultipleHomeOwners(string $nameString): bool
     {
         foreach (Conjunction::values() as $conjunction) {
             if (str_contains($nameString, " {$conjunction} ")) {
@@ -60,7 +80,7 @@ class HomeOwnerDataService
         return false;
     }
 
-    private function parseMultiplePeople(string $nameString): ?array
+    private function parseMultipleHomeOwners(string $nameString): ?array
     {
         $conjunction = $this->findConjunction($nameString);
 
@@ -74,7 +94,7 @@ class HomeOwnerDataService
             return null;
         }
 
-        return $this->createPeopleFromParts(Arr::get($parts, 0), Arr::get($parts, 1));
+        return $this->createHomeOwnersFromParts(Arr::get($parts, 0), Arr::get($parts, 1));
     }
 
     private function findConjunction(string $nameString): ?string
@@ -98,18 +118,18 @@ class HomeOwnerDataService
         return count($parts) === 2;
     }
 
-    private function createPeopleFromParts(string $firstPart, string $secondPart): array
+    private function createHomeOwnersFromParts(string $firstPart, string $secondPart): array
     {
         $firstPart = trim($firstPart);
         $secondPart = trim($secondPart);
 
         $firstPart = $this->addSharedLastNameIfNeeded($firstPart, $secondPart);
-        $firstPerson = $this->parseSinglePerson($firstPart);
+        $firstHomeOwner = $this->parseSingleHomeOwner($firstPart);
 
-        $secondPart = $this->addInferredTitleIfNeeded($secondPart, $firstPerson->title);
-        $secondPerson = $this->parseSinglePerson($secondPart);
+        $secondPart = $this->addInferredTitleIfNeeded($secondPart, $firstHomeOwner->title);
+        $secondHomeOwner = $this->parseSingleHomeOwner($secondPart);
 
-        return [$firstPerson, $secondPerson];
+        return [$firstHomeOwner, $secondHomeOwner];
     }
 
     private function addSharedLastNameIfNeeded(string $firstPart, string $secondPart): string
@@ -123,13 +143,13 @@ class HomeOwnerDataService
         return $firstPart;
     }
 
-    private function addInferredTitleIfNeeded(string $secondPart, string $firstPersonTitle): string
+    private function addInferredTitleIfNeeded(string $secondPart, string $firstHomeOwnerTitle): string
     {
         if ($this->hasTitle($secondPart)) {
             return $secondPart;
         }
 
-        $inferredTitle = $this->inferTitle($firstPersonTitle);
+        $inferredTitle = $this->inferTitle($firstHomeOwnerTitle);
 
         return $inferredTitle.' '.$secondPart;
     }
@@ -162,7 +182,7 @@ class HomeOwnerDataService
         return count($words) === 1 && $this->isTitle(Arr::first($words));
     }
 
-    private function parseSinglePerson(string $nameString): ?HomeOwner
+    private function parseSingleHomeOwner(string $nameString): ?HomeOwner
     {
         $words = $this->cleanWords($nameString);
 
@@ -172,7 +192,7 @@ class HomeOwnerDataService
 
         $nameComponents = $this->extractNameComponents($words);
 
-        return $this->createPersonFromComponents($nameComponents);
+        return $this->createHomeOwnerFromComponents($nameComponents);
     }
 
     private function cleanWords(string $nameString): array
@@ -250,7 +270,7 @@ class HomeOwnerDataService
         Arr::set($components, 'firstName', $firstNameOrInitial);
     }
 
-    private function createPersonFromComponents(array $components): HomeOwner
+    private function createHomeOwnerFromComponents(array $components): HomeOwner
     {
         return new HomeOwner(
             Arr::get($components, 'title'),
@@ -277,12 +297,40 @@ class HomeOwnerDataService
         return strlen($word) <= 2 && preg_match('/^[A-Z]\.?$/', $word);
     }
 
-    private function inferTitle(string $firstPersonTitle): string
+    private function inferTitle(string $firstHomeOwnerTitle): string
     {
-        return match ($firstPersonTitle) {
+        return match ($firstHomeOwnerTitle) {
             'Mr' => 'Mrs',
             'Mrs' => 'Mr',
-            default => $firstPersonTitle,
+            default => $firstHomeOwnerTitle,
         };
+    }
+
+    private function resetState(): void
+    {
+        $this->homeOwners = [];
+        $this->statistics = [
+            'total_parsed' => 0,
+            'newly_created' => 0,
+            'duplicates_found' => 0,
+        ];
+    }
+
+    private function persistHomeOwners(array $homeOwners): void
+    {
+        DB::transaction(function () use ($homeOwners) {
+            foreach ($homeOwners as $homeOwner) {
+
+                $attributes = HomeOwnerModel::fromDto($homeOwner);
+
+                $homeOwner = HomeOwnerModel::updateOrCreate($attributes, $attributes);
+
+                if ($homeOwner->wasRecentlyCreated) {
+                    $this->statistics['newly_created']++;
+                } else {
+                    $this->statistics['duplicates_found']++;
+                }
+            }
+        });
     }
 }
