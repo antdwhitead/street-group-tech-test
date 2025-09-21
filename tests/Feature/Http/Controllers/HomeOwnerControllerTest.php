@@ -113,4 +113,89 @@ describe('HomeOwnerController', function () {
             $this->assertDatabaseCount('home_owners', 0);
         });
     });
+
+    describe('index', function () {
+        it('displays home owners index page', function () {
+            $response = $this->get(route('homeowners.index'));
+
+            $response->assertSuccessful()
+                ->assertInertia(fn ($page) => $page->component('HomeOwners/Index')
+                    ->has('homeOwners')
+                    ->has('filters')
+                );
+        });
+
+        it('paginates home owners correctly', function () {
+            HomeOwnerModel::factory()->count(20)->create();
+
+            $response = $this->get(route('homeowners.index'));
+
+            $response->assertSuccessful()
+                ->assertInertia(fn ($page) => $page->component('HomeOwners/Index')
+                    ->where('homeOwners.per_page', 15)
+                    ->where('homeOwners.total', 20)
+                    ->has('homeOwners.data', 15)
+                );
+        });
+
+        it('filters by search query', function () {
+            HomeOwnerModel::factory()->create([
+                'title' => 'Mr',
+                'first_name' => 'John',
+                'last_name' => 'Smith',
+            ]);
+            HomeOwnerModel::factory()->create([
+                'title' => 'Mrs',
+                'first_name' => 'Jane',
+                'last_name' => 'Doe',
+            ]);
+
+            $response = $this->get(route('homeowners.index', ['search' => 'Smith']));
+
+            $response->assertSuccessful()
+                ->assertInertia(fn ($page) => $page->component('HomeOwners/Index')
+                    ->where('homeOwners.total', 1)
+                    ->where('filters.search', 'Smith')
+                );
+        });
+
+        it('filters by title', function () {
+            HomeOwnerModel::factory()->create(['title' => 'Mr']);
+            HomeOwnerModel::factory()->create(['title' => 'Mrs']);
+            HomeOwnerModel::factory()->create(['title' => 'Dr']);
+
+            $response = $this->get(route('homeowners.index', ['title' => 'Dr']));
+
+            $response->assertSuccessful()
+                ->assertInertia(fn ($page) => $page->component('HomeOwners/Index')
+                    ->where('homeOwners.total', 1)
+                    ->where('filters.title', 'Dr')
+                );
+        });
+
+        it('combines search and title filters', function () {
+            HomeOwnerModel::factory()->create([
+                'title' => 'Dr',
+                'first_name' => 'John',
+                'last_name' => 'Smith',
+            ]);
+            HomeOwnerModel::factory()->create([
+                'title' => 'Mr',
+                'first_name' => 'John',
+                'last_name' => 'Doe',
+            ]);
+
+            $response = $this->get(route('homeowners.index', [
+                'search' => 'John',
+                'title' => 'Dr',
+            ]));
+
+            $response->assertSuccessful()
+                ->assertInertia(fn ($page) => $page->component('HomeOwners/Index')
+                    ->where('homeOwners.total', 1)
+                    ->where('filters.search', 'John')
+                    ->where('filters.title', 'Dr')
+                );
+        });
+    });
 });

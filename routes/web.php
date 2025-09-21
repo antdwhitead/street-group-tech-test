@@ -9,6 +9,9 @@ Route::get('/', function () {
     return Inertia::render('Welcome');
 })->name('home');
 
+Route::get('/homeowners', [App\Http\Controllers\HomeOwnerController::class, 'index'])
+    ->name('homeowners.index');
+
 Route::post('/homeowners/upload', [App\Http\Controllers\HomeOwnerController::class, 'upload'])
     ->name('homeowners.upload');
 

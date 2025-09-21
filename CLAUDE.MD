@@ -30,7 +30,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Architecture
 
-This is a Laravel + Vue application using Inertia.js for seamless SPA-like experience.
+This is a Laravel + Vue application using Inertia.js for seamless SPA-like experience. You must keep code DRY and adhere to SOLID principles.
 
 ### Frontend Architecture
 - **Framework**: Vue 3.5 with TypeScript
@@ -79,6 +79,7 @@ This is a Laravel + Vue application using Inertia.js for seamless SPA-like exper
 
 ## Front end
 - All code should adhere to typescript definitions
+- Types and interfaces should be defined in their own file and used across files
 - Your task is only complete once you have:
   - Run type check
   - Run prettier
