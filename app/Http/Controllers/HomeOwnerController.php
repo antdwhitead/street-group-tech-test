@@ -26,10 +26,6 @@ class HomeOwnerController extends Controller
             $query->search($request->string('search'));
         }
 
-        if ($request->filled('title')) {
-            $query->where('title', $request->string('title'));
-        }
-
         $homeOwners = $query->orderBy('created_at', 'desc')
             ->paginate(15)
             ->withQueryString();

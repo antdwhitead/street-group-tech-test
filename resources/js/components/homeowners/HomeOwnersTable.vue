@@ -27,7 +27,6 @@ defineProps<Props>();
                         <th scope="col" class="px-6 py-3 text-left text-xs font-medium tracking-wider text-gray-500 uppercase">First Name</th>
                         <th scope="col" class="px-6 py-3 text-left text-xs font-medium tracking-wider text-gray-500 uppercase">Initial</th>
                         <th scope="col" class="px-6 py-3 text-left text-xs font-medium tracking-wider text-gray-500 uppercase">Last Name</th>
-                        <th scope="col" class="px-6 py-3 text-left text-xs font-medium tracking-wider text-gray-500 uppercase">Full Name</th>
                         <th scope="col" class="px-6 py-3 text-left text-xs font-medium tracking-wider text-gray-500 uppercase">Created</th>
                     </tr>
                 </thead>
@@ -44,11 +43,6 @@ defineProps<Props>();
                         </td>
                         <td class="px-6 py-4 text-sm whitespace-nowrap text-gray-900">
                             {{ homeOwner.last_name || '-' }}
-                        </td>
-                        <td class="px-6 py-4 text-sm whitespace-nowrap text-gray-900">
-                            <span class="font-medium">
-                                {{ homeOwner.full_name }}
-                            </span>
                         </td>
                         <td class="px-6 py-4 text-sm whitespace-nowrap text-gray-500">
                             {{ homeOwner.created_at ? new Date(homeOwner.created_at).toLocaleDateString() : '-' }}
