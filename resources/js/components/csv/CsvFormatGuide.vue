@@ -1,9 +1,8 @@
-<script setup lang="ts">
-</script>
+<script setup lang="ts"></script>
 
 <template>
     <div class="text-sm text-gray-500">
-        <h3 class="font-medium mb-2">Expected CSV Format:</h3>
+        <h3 class="mb-2 font-medium">Expected CSV Format:</h3>
         <ul class="space-y-1">
             <li>• Header row: "homeowner" (will be skipped)</li>
             <li>• Single names: "Mr John Smith"</li>

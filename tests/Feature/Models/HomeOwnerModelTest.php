@@ -69,4 +69,38 @@ describe('HomeOwnerModel', function () {
         'title and last name only' => [Title::MRS, null, null, 'Johnson', 'Mrs Johnson'],
         'with both first name and initial' => [Title::PROF, 'Mary', 'A', 'Wilson', 'Prof Mary A. Wilson'],
     ]);
+
+    it('searches across name fields correctly', function () {
+        HomeOwnerModel::factory()->create([
+            'title' => 'Mr',
+            'first_name' => 'John',
+            'last_name' => 'Smith',
+        ]);
+        HomeOwnerModel::factory()->create([
+            'title' => 'Dr',
+            'first_name' => 'Jane',
+            'last_name' => 'Doe',
+        ]);
+        HomeOwnerModel::factory()->create([
+            'title' => 'Mrs',
+            'first_name' => 'Mary',
+            'initial' => 'J',
+            'last_name' => 'Johnson',
+        ]);
+
+        $titleResults = HomeOwnerModel::search('Dr')->get();
+        expect($titleResults)->toHaveCount(1)
+            ->and($titleResults->first()->first_name)->toBe('Jane');
+
+        $firstNameResults = HomeOwnerModel::search('Smith')->get();
+        expect($firstNameResults)->toHaveCount(1)
+            ->and($firstNameResults->first()->first_name)->toBe('John');
+
+        $initialResults = HomeOwnerModel::search('Mary')->get();
+        expect($initialResults)->toHaveCount(1);
+
+        $lastNameResults = HomeOwnerModel::search('Johnson')->get();
+        expect($lastNameResults)->toHaveCount(1)
+            ->and($lastNameResults->first()->first_name)->toBe('Mary');
+    });
 });
