@@ -1,6 +1,6 @@
 <script setup lang="ts">
-import { Link } from '@inertiajs/vue3';
 import type { PaginationData } from '@/types/pagination';
+import { Link } from '@inertiajs/vue3';
 
 interface Props {
     pagination: PaginationData;
@@ -53,9 +53,9 @@ defineProps<Props>();
                                 'relative inline-flex items-center px-4 py-2 text-sm font-medium',
                                 link.active
                                     ? 'z-10 bg-blue-600 text-white focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-blue-600'
-                                    : 'text-gray-900 ring-1 ring-inset ring-gray-300 hover:bg-gray-50 focus:outline-offset-0',
+                                    : 'text-gray-900 ring-1 ring-gray-300 ring-inset hover:bg-gray-50 focus:outline-offset-0',
                                 index === 0 ? 'rounded-l-md' : '',
-                                index === pagination.links.length - 1 ? 'rounded-r-md' : ''
+                                index === pagination.links.length - 1 ? 'rounded-r-md' : '',
                             ]"
                         >
                             {{ link.label }}
@@ -65,7 +65,7 @@ defineProps<Props>();
                             :class="[
                                 'relative inline-flex items-center px-4 py-2 text-sm font-medium text-gray-500',
                                 index === 0 ? 'rounded-l-md' : '',
-                                index === pagination.links.length - 1 ? 'rounded-r-md' : ''
+                                index === pagination.links.length - 1 ? 'rounded-r-md' : '',
                             ]"
                         >
                             {{ link.label }}

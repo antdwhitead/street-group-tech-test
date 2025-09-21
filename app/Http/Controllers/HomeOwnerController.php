@@ -38,7 +38,6 @@ class HomeOwnerController extends Controller
             'homeOwners' => $homeOwners,
             'filters' => [
                 'search' => $request->string('search'),
-                'title' => $request->string('title'),
             ],
         ]);
     }

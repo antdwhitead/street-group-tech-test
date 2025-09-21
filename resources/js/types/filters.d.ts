@@ -1,4 +1,7 @@
 export type FilterParams = {
     search: string;
-    title: string;
-}
+};
+
+export type HomeOwnerFilters = {
+    search: string;
+};

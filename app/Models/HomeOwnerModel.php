@@ -53,8 +53,7 @@ class HomeOwnerModel extends Model
     public function scopeSearch($query, string $search)
     {
         return $query->where(function ($q) use ($search) {
-            $q->whereRaw("CONCAT(COALESCE(first_name, ''), CASE WHEN initial IS NOT NULL THEN CONCAT(' ', initial) ELSE '' END, ' ', last_name) LIKE ?", ["%{$search}%"])
-                ->orWhereRaw("CONCAT(COALESCE(first_name, ''), CASE WHEN initial IS NOT NULL THEN CONCAT(' ', initial, '.') ELSE '' END, ' ', last_name) LIKE ?", ["%{$search}%"]);
+            $q->whereRaw("CONCAT(title, COALESCE(first_name, ''), CASE WHEN initial IS NOT NULL THEN CONCAT(' ', initial) ELSE '' END, ' ', last_name) LIKE ?", ["%{$search}%"]);
         });
     }
 

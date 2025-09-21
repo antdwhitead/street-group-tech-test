@@ -35,27 +35,25 @@ const uploadCsv = () => {
         },
         onFinish: () => {
             isUploading.value = false;
-        }
+        },
     });
 };
 </script>
 
 <template>
-    <div class="bg-white shadow-lg rounded-lg p-8">
+    <div class="rounded-lg bg-white p-8 shadow-lg">
         <div class="mb-6">
-            <label for="csv-file" class="block text-sm font-medium text-gray-700 mb-2">
-                Select CSV File
-            </label>
+            <label for="csv-file" class="mb-2 block text-sm font-medium text-gray-700"> Select CSV File </label>
             <input
                 id="csv-file"
                 type="file"
                 accept=".csv"
                 @change="handleFileChange"
-                class="block w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100"
+                class="block w-full text-sm text-gray-500 file:mr-4 file:rounded-full file:border-0 file:bg-blue-50 file:px-4 file:py-2 file:text-sm file:font-semibold file:text-blue-700 hover:file:bg-blue-100"
             />
         </div>
 
-        <div v-if="error" class="mb-4 p-4 bg-red-50 border border-red-200 rounded-md">
+        <div v-if="error" class="mb-4 rounded-md border border-red-200 bg-red-50 p-4">
             <p class="text-sm text-red-600">{{ error }}</p>
         </div>
 
@@ -63,18 +61,20 @@ const uploadCsv = () => {
             <button
                 @click="uploadCsv"
                 :disabled="!csvFile || isUploading"
-                class="w-full flex justify-center py-2 px-4 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 disabled:bg-gray-400 disabled:cursor-not-allowed"
+                class="flex w-full justify-center rounded-md border border-transparent bg-blue-600 px-4 py-2 text-sm font-medium text-white shadow-sm hover:bg-blue-700 focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 focus:outline-none disabled:cursor-not-allowed disabled:bg-gray-400"
             >
                 <span v-if="isUploading" class="flex items-center">
-                    <svg class="animate-spin -ml-1 mr-3 h-5 w-5 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                    <svg class="mr-3 -ml-1 h-5 w-5 animate-spin text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
                         <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
-                        <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                        <path
+                            class="opacity-75"
+                            fill="currentColor"
+                            d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
+                        ></path>
                     </svg>
                     Processing...
                 </span>
-                <span v-else>
-                    Parse CSV
-                </span>
+                <span v-else> Parse CSV </span>
             </button>
         </div>
     </div>
